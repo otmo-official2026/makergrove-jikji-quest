@@ -30,7 +30,7 @@ window.COURSE = {
 
   intro: [
     { art: 'mission', image: 'assets/img/card_mission.jpg', title: '여섯 자를 되찾아라', body: ['장소마다 퀘스트를 끝내면', '활자 한 자를 얻습니다'] },
-    { art: 'scores', image: 'assets/img/card_scores.jpg', title: '빨리, 잘, 운 좋게', body: ['속도·성적·행운 점수가', '따로 쌓입니다'] },
+    { art: 'scores', image: 'assets/img/card_scores.jpg', title: '점수는 세 가지', body: ['빨리 끝내면 속도, 잘하면 성적', '운이 좋으면 행운 점수'] },
     { art: 'awards', image: 'assets/img/card_awards.jpg', title: '끝나면 시상식', body: ['종합 1~3위와 부문상,', '전원에게 랜덤 보상'] },
   ],
 
