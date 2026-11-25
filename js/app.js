@@ -418,13 +418,16 @@
   function screenJoin() {
     const J = CO.join;
     const opts = (arr, ph, val, suf = '') => `<option value="">${ph}</option>${arr.map((x) => `<option value="${esc(x)}"${String(val) === String(x) ? ' selected' : ''}>${esc(x)}${suf}</option>`).join('')}`;
+    /* 중학교는 3학년까지, 초등학교(와 학교를 고르기 전)는 6학년까지 */
+    const gradesFor = (school) => J.grades.filter((g) => g <= (/중학교$/.test(school || '') ? 3 : 6));
+    if (draft.grade && !gradesFor(draft.school).includes(Number(draft.grade))) draft.grade = '';
     frame({
       bar: false,
       body: `<h1 class="h1">참가 등록</h1>
       <div class="form-row" data-f="name"><label for="f-name">이름</label><input class="inp" id="f-name" autocomplete="off" maxlength="10" value="${esc(draft.name)}"><p class="err" aria-live="polite"></p></div>
       <div class="form-row" data-f="phone"><label for="f-phone">연락처</label><input class="inp" id="f-phone" inputmode="numeric" autocomplete="off" placeholder="010-" maxlength="13" value="${esc(draft.phone)}"><p class="err" aria-live="polite"></p></div>
       <div class="form-row" data-f="school"><label for="f-school">학교</label><select class="sel" id="f-school">${opts(J.schools, '선택', draft.school)}</select><p class="err" aria-live="polite"></p></div>
-      <div class="form-row" data-f="gc"><span class="lab" id="l-gc">학년·반</span><div class="two"><select class="sel" id="f-grade" aria-labelledby="l-gc">${opts(J.grades, '학년', draft.grade, '학년')}</select><select class="sel" id="f-cls" aria-labelledby="l-gc">${opts(J.classes, '반', draft.cls, '반')}</select></div><p class="err" aria-live="polite"></p></div>
+      <div class="form-row" data-f="gc"><span class="lab" id="l-gc">학년·반</span><div class="two"><select class="sel" id="f-grade" aria-labelledby="l-gc">${opts(gradesFor(draft.school), '학년', draft.grade, '학년')}</select><select class="sel" id="f-cls" aria-labelledby="l-gc">${opts(J.classes, '반', draft.cls, '반')}</select></div><p class="err" aria-live="polite"></p></div>
       <div class="form-row" data-f="team"><span class="lab" id="l-team">조</span><div class="teams" role="group" aria-labelledby="l-team">${Array.from({ length: J.teams }, (_, i) => `<button type="button" aria-pressed="${draft.team === i + 1}" data-t="${i + 1}">${i + 1}</button>`).join('')}</div><p class="err" aria-live="polite"></p></div>
       <div class="consent" id="consent">
         <div class="consent-row"><button class="check" type="button" role="checkbox" aria-checked="${draft.req}" data-c="req"><span class="box"></span>${esc(J.terms.required.label)}</button><button class="view" type="button" data-v="required">보기</button></div>
@@ -452,7 +455,13 @@
       e.target.value = d.length > 7 ? `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}` : d.length > 3 ? `${d.slice(0, 3)}-${d.slice(3)}` : d;
       draft.phone = e.target.value; paint();
     });
-    $('#f-school').addEventListener('change', (e) => { draft.school = e.target.value; paint(); });
+    $('#f-school').addEventListener('change', (e) => {
+      draft.school = e.target.value;
+      const gs = gradesFor(draft.school);
+      if (draft.grade && !gs.includes(Number(draft.grade))) draft.grade = '';
+      $('#f-grade').innerHTML = opts(gs, '학년', draft.grade, '학년');
+      paint();
+    });
     $('#f-grade').addEventListener('change', (e) => { draft.grade = e.target.value; paint(); });
     $('#f-cls').addEventListener('change', (e) => { draft.cls = e.target.value; paint(); });
     $$('.teams button').forEach((b) => b.addEventListener('click', () => { draft.team = Number(b.dataset.t); $$('.teams button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); paint(); }));
@@ -1387,7 +1396,7 @@
   }
   const testDock = document.createElement('div');
   testDock.className = 'tdock';
-  testDock.innerHTML = '<button class="tbtn" type="button" aria-label="테스트 메뉴 열기">테스트</button>';
+  testDock.innerHTML = '<button class="tbtn" type="button" aria-label="메뉴 열기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>';
   document.body.appendChild(testDock);
   testDock.querySelector('.tbtn').addEventListener('click', (e) => { e.stopPropagation(); sheetTest(); });
 

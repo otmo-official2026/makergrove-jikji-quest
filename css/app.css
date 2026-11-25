@@ -721,7 +721,8 @@ h1, h2, h3, p { margin: 0; }
 /* X-05 테스트 버튼: #app 바깥에 하나만 두고, 폰 틀과 같은 자리에 겹친다 */
 .tdock { position: fixed; z-index: 100; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; min-width: 320px; height: 100vh; height: 100dvh; pointer-events: none; }
 @media (min-width: 600px) { .tdock { top: 50%; width: 400px; height: min(100dvh, 880px); transform: translate(-50%, -50%); } }
-.tbtn { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); min-width: 44px; height: 44px; padding: 0 12px; border-radius: 999px; background: rgba(26, 23, 20, .55); color: var(--paper); border: 2px solid rgba(243, 234, 214, .6); font-weight: 700; font-size: 13px; line-height: 1; pointer-events: auto; }
+.tbtn { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(26, 23, 20, .55); color: var(--paper); border: 2px solid rgba(243, 234, 214, .6); font-weight: 700; font-size: 13px; line-height: 1; pointer-events: auto; }
+.tbtn svg { pointer-events: none; }
 .tbtn:active { transform: scale(.94); }
 /* 위쪽 바가 있는 화면: "?" 왼쪽에 두고 진행 칸을 조금 왼쪽으로 민다 */
 body:has(#app > .bar) .tbtn { right: calc(62px + env(safe-area-inset-right)); }
