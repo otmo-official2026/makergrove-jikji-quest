@@ -67,12 +67,33 @@
   function preloadImage(path) { if (path) hasImage(path); }
 
   /* 정지 그림 위에 느린 확대·빛 번짐·금빛 입자 */
-  function picture(el, p) {
-    el.innerHTML = `<div class="fx fx-pic" style="--bg:${p.bg};--ar:${p.w / p.h}">
+  const picLayer = (p, cls = '') => `<div class="fx fx-pic${cls}" style="--bg:${p.bg};--ar:${p.w / p.h}">
       <div class="fx-pic-frame"><img class="fx-pic-img" src="${p.src}" alt="">
         <div class="fx-pic-bloom"></div>
         <div class="fx-pic-dust">${Array.from({ length: 16 }, (_, i) => `<i style="--x:${(i * 41 + 7) % 92 + 4}%;--y:${(i * 23) % 50 + 12}%;--t:${7 + (i % 5) * 1.6}s;--dl:${-(i * 1.3)}s;--z:${2 + (i % 3)}px"></i>`).join('')}</div>
       </div></div>`;
+  function picture(el, p) { el.innerHTML = picLayer(p); }
+
+  /* 그림이 떠 있는 el에서 다른 그림으로 겹쳐 바꾼다 (이야기 그림 여러 장).
+   * 영상·대체 연출 중이거나 새 그림이 안 열리면 그대로 둔다. 마지막 요청만 반영 */
+  async function swapImage(el, path) {
+    const token = (el._picToken = (el._picToken || 0) + 1);
+    const cur = el.querySelector('.fx-pic:last-child');
+    if (!cur || !path) return;
+    if (cur.querySelector('.fx-pic-img').getAttribute('src') === path) return;
+    const p = await hasImage(path);
+    if (!p || token !== el._picToken || !el.querySelector('.fx-pic')) return;
+    const box = document.createElement('div');
+    box.innerHTML = picLayer(p, ' fx-pic--in');
+    const layer = box.firstElementChild;
+    const img = layer.querySelector('img');
+    try { if (img.decode) await img.decode(); } catch (e) { /* 디코드 실패: 그대로 붙인다 */ }
+    if (token !== el._picToken) return;
+    el.appendChild(layer);
+    /* 겹치기가 끝나면 아래 깔린 그림만 지운다 (뒤에 온 그림은 남긴다) */
+    const done = () => { if (layer.parentNode !== el) return; while (layer.previousElementSibling) layer.previousElementSibling.remove(); layer.classList.remove('fx-pic--in'); };
+    layer.addEventListener('animationend', (e) => { if (e.target === layer) done(); });
+    setTimeout(done, 900);
   }
 
   /* 영상 → 이미지 → 대체 연출 순으로 el 안에 재생. 끝나면 resolve.
@@ -303,5 +324,5 @@
     setTimeout(() => box.remove(), 3600);
   }
 
-  window.FX = { typeBlock, play, preload, preloadImage, hasVideo, confetti, wait, reduce };
+  window.FX = { typeBlock, play, preload, preloadImage, swapImage, hasVideo, confetti, wait, reduce };
 })();

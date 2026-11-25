@@ -4,6 +4,8 @@
  * 영상(video) 칸: 파일을 넣으면 그 영상을 재생하고, 파일이 없거나 3초 안에 열리지 않으면
  * 같은 내용을 그림·애니메이션으로 대신 보여 준다.
  * 이미지(image) 칸: 영상이 없을 때 이 그림을 쓴다. 그림도 열리지 않으면 그림·애니메이션으로 돌아간다.
+ * 이야기 그림 여러 장(images): 있으면 image 대신 쓰고, 자막이 넘어가는 동안 고르게 나눠 바꾼다(자막 6장·그림 3장 → 2장마다).
+ * 활동 그림(game.image): 있으면 활동 화면에서 그림(art) 대신 보여 준다. 열리지 않으면 그림(art)으로.
  * 자막(captions)의 " / "는 줄바꿈이다. 화면에서도 그 자리에서 끊는다.
  * 활자의 기억(memory): 활자를 잡은 직후, 단계 성적표, 활자 보관함에 나오는 한 줄.
  */
@@ -80,6 +82,7 @@ window.COURSE = {
       story: {
         video: 'assets/video/story_1.mp4',
         image: 'assets/img/story_tools.jpg',
+        images: ['assets/img/story_tools.jpg', 'assets/img/story_desk.jpg', 'assets/img/story_case.jpg'],
         scene: 'tools',
         captions: [
           '오늘 너희는 / 수습 각자장이다.',
@@ -94,6 +97,7 @@ window.COURSE = {
       game: {
         type: 'activity',
         art: 'chant',
+        image: 'assets/img/game_chant.jpg',
         lines: ['조 구호를 다 함께 외치세요', '끝나면 요원에게 확인받습니다'],
         points: 20,
       },
@@ -111,6 +115,7 @@ window.COURSE = {
       story: {
         video: 'assets/video/story_2.mp4',
         image: 'assets/img/story_temple.jpg',
+        images: ['assets/img/story_temple.jpg', 'assets/img/story_gong.jpg', 'assets/img/story_dawn.jpg'],
         scene: 'temple',
         captions: [
           '여기가 흥덕사 터.',
@@ -141,6 +146,7 @@ window.COURSE = {
       story: {
         video: 'assets/video/story_3.mp4',
         image: 'assets/img/story_showcase.jpg',
+        images: ['assets/img/story_showcase.jpg', 'assets/img/story_trunk.jpg', 'assets/img/story_library.jpg'],
         scene: 'showcase',
         captions: [
           '금속활자로 찍은 책 가운데 / 지금 남아 있는 가장 오래된 책.',
@@ -177,6 +183,7 @@ window.COURSE = {
       story: {
         video: 'assets/video/story_4.mp4',
         image: 'assets/img/story_pour.jpg',
+        images: ['assets/img/story_waxtree.jpg', 'assets/img/story_pour.jpg', 'assets/img/story_typetree.jpg'],
         scene: 'pour',
         captions: [
           '활자 한 자는 / 이렇게 태어난다.',
@@ -210,6 +217,7 @@ window.COURSE = {
       story: {
         video: 'assets/video/story_5.mp4',
         image: 'assets/img/story_machine.jpg',
+        images: ['assets/img/story_machine.jpg', 'assets/img/story_typewriter.jpg', 'assets/img/story_printer3d.jpg'],
         scene: 'machine',
         captions: [
           '활자는 기계가 되고 / 기계는 세상을 바꿨다.',
@@ -240,6 +248,7 @@ window.COURSE = {
       story: {
         video: 'assets/video/story_6.mp4',
         image: 'assets/img/story_world.jpg',
+        images: ['assets/img/story_world.jpg', 'assets/img/story_medal.jpg', 'assets/img/story_archive.jpg'],
         scene: 'world',
         captions: [
           '2001년 9월 4일, / 직지는 세계기록유산이 됐다.',
@@ -254,6 +263,7 @@ window.COURSE = {
       game: {
         type: 'final',
         art: 'jump',
+        image: 'assets/img/game_jump.jpg',
         lines: ['다 함께 뛰어 사진을 찍으세요', '끝나면 요원에게 확인받습니다'],
         photoPoints: 20,
         arrange: { title: '여섯 자를 바로 놓으세요', points: 30, penalty: 10, floor: 10 },

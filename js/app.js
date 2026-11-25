@@ -88,7 +88,7 @@
         const box = img.parentNode;
         if (!box) return;
         box.classList.add('pic-fb');
-        img.outerHTML = kind === 'card' ? ART.cards[key]() : ART.places[key]();
+        img.outerHTML = kind === 'card' ? ART.cards[key]() : kind === 'act' ? ART.activity[key]() : ART.places[key]();
       };
       if (img.complete && !img.naturalWidth) fallback();
       else img.addEventListener('error', fallback, { once: true });
@@ -508,24 +508,14 @@
   function screenOpening() {
     const O = CO.opening;
     app.className = 'dark';
-    app.innerHTML = `<div class="stage"><div class="media" id="m"></div><div class="subs"><p class="sub cap" id="sub"></p><div class="tap-hint"></div></div></div>`;
+    /* 장소 이야기와 같은 방식: 화면을 누를 때마다 자막 한 장, 마지막 장에서 버튼 */
+    app.innerHTML = `<div class="stage" data-story><div class="media"></div>
+      <div class="subs"><p class="sub cap"></p><div class="sub-dots" aria-hidden="true">${O.captions.map(() => '<i></i>').join('')}</div><div class="tap-hint">화면을 눌러 넘기세요</div></div></div>`;
     let done = false;
     const finish = () => { if (done) return; done = true; S.introStep = 1; save(); route(); };
-    const timers = [];
-    const sub = $('#sub');
-    const STEP = 2900;
-    cleanup.push(fitSubsLive(sub, O.captions));
-    O.captions.forEach((c, i) => timers.push(setTimeout(() => { sub.innerHTML = capHtml(c); }, 300 + i * STEP)));
-    const capsDone = new Promise((res) => timers.push(setTimeout(res, 300 + O.captions.length * STEP)));
-    timers.push(setTimeout(() => {
-      const b = document.createElement('button');
-      b.className = 'skip'; b.type = 'button'; b.textContent = '건너뛰기';
-      b.addEventListener('click', finish);
-      $('.stage').appendChild(b);
-    }, O.skipAfter * 1000));
-    cleanup.push(() => { done = true; timers.forEach(clearTimeout); });
-    const media = FX.play($('#m'), { video: O.video, image: O.image, scene: 'opening' });
-    Promise.all([media, capsDone]).then(() => { if (!done) timers.push(setTimeout(finish, 400)); });
+    const story = { story: { captions: O.captions, video: O.video, image: O.image, scene: 'opening' } };
+    cleanup.push(runStory(app, story, '다음', finish));
+    cleanup.push(() => { done = true; });
   }
 
   function screenCards() {
@@ -576,7 +566,8 @@
     });
     bindPics();
     FX.preload(stageVideos(s));
-    FX.preloadImage(s.story.image);
+    (s.story.images || [s.story.image]).forEach(FX.preloadImage);
+    FX.preloadImage(s.game.image);
     capFont(s.story.captions);
     $('#b').addEventListener('click', openScanner);
   }
@@ -673,8 +664,12 @@
   /* 화면을 누를 때마다 자막을 한 장씩. 마지막 장에서 버튼(label)을 띄운다. 정리 함수를 돌려준다 */
   function runStory(root, s, label, onEnd) {
     const caps = s.story.captions;
-    const stage = $('[data-story]', root), sub = $('.sub', stage), hint = $('.tap-hint', stage);
-    FX.play($('.media', stage), { video: s.story.video, image: s.story.image, scene: s.story.scene, loop: true });
+    const stage = $('[data-story]', root), sub = $('.sub', stage), hint = $('.tap-hint', stage), media = $('.media', stage);
+    /* 그림이 여러 장이면 자막 순서에 맞춰 바꾼다 (6장 자막, 3장 그림 → 2장마다) */
+    const imgs = s.story.images && s.story.images.length ? s.story.images : [s.story.image];
+    imgs.forEach(FX.preloadImage);
+    let want = 0, ready = false;
+    FX.play(media, { video: s.story.video, image: imgs[0], scene: s.story.scene, loop: true }).then(() => { ready = true; if (want) FX.swapImage(media, imgs[want]); });
     const unfit = fitSubsLive(sub, caps);
     let i = -1, last = 0;
     const next = () => {
@@ -683,6 +678,8 @@
       if (i >= 0 && t - last < 250) return; // 두 번 눌림 방지
       last = t;
       i += 1;
+      const k = Math.floor(i * imgs.length / caps.length);
+      if (k !== want) { want = k; if (ready) FX.swapImage(media, imgs[k]); }
       sub.innerHTML = capHtml(caps[i]);
       sub.setAttribute('aria-label', `${i + 1} / ${caps.length}`);
       $$('.sub-dots i', stage).forEach((d, k) => d.classList.toggle('on', k <= i));
@@ -724,13 +721,13 @@
     if (r.status === 'penalty') return r.shown ? screenPenalty(n) : screenResult(n);
     if (r.status === 'result') return r.shown ? screenAR(n) : screenResult(n);
     const g = s.game;
-    if (g.type === 'activity') return gameActivity(n, g.art, g.lines, () => finishGame(n, { pass: true }));
+    if (g.type === 'activity') return gameActivity(n, g.art, g.lines, () => finishGame(n, { pass: true }), g.image);
     if (g.type === 'dice') return gameDice(n);
     if (g.type === 'lottery') return gameLottery(n);
     if (g.type === 'count') return gameCount(n);
     if (g.type === 'quiz') return gameQuiz(n);
     if (g.type === 'final') {
-      if (!r.photo) return gameActivity(n, g.art, g.lines, () => { r.photo = true; r.photoAt = now(); save(); band(`통과! 성적 +${g.photoPoints}`, true); screenPlay(n); });
+      if (!r.photo) return gameActivity(n, g.art, g.lines, () => { r.photo = true; r.photoAt = now(); save(); band(`통과! 성적 +${g.photoPoints}`, true); screenPlay(n); }, g.image);
       return gameArrange(n);
     }
     return redirect();
@@ -745,12 +742,13 @@
     screenResult(n);
   }
 
-  function gameActivity(n, art, txt, onOk) {
+  function gameActivity(n, art, txt, onOk, image) {
     frame({
       timer: rec(n).startAt,
-      body: `<div class="act-art">${ART.activity[art]()}</div><p class="h2 act-lines">${txt.map(esc).join('<br>')}</p>`,
+      body: `<div class="act-art">${image ? picHtml(image, `act:${art}`) : ART.activity[art]()}</div><p class="h2 act-lines">${txt.map(esc).join('<br>')}</p>`,
       foot: `<button class="btn" type="button" id="b">요원 확인</button>${AGENT_NOTE}`,
     });
+    bindPics();
     $('#b').addEventListener('click', onOk);
   }
 
