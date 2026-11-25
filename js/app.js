@@ -1300,6 +1300,97 @@
     save();
     go(canonical());
   }
+  function resetAll() {
+    try { localStorage.removeItem(KEY); sessionStorage.clear(); } catch (e) { /* 저장소 없음 */ }
+    S = blank();
+    history.replaceState(null, '', '#/'); route();
+    band('기록을 모두 지웠어요', true);
+  }
+
+  /* =========================================================
+   * X-05 테스트 메뉴 (늘 보이는 "테스트" 버튼)
+   * "지금 단계" = 아직 끝내지 않은 첫 단계. 가입 전 0, 완주 뒤 N+1
+   * ======================================================= */
+  function testNow() {
+    if (!S.user) return 0;
+    if (S.phase === 'final') return N + 1;
+    if (S.phase === 'stages') return S.current;
+    return 1; // 임명장·오프닝·규칙 카드
+  }
+  /* n단계부터 뒤 기록을 지우고 n단계 이동 안내로 (앞 단계 기록은 그대로) */
+  function testRestart(n) {
+    for (let j = n; j <= N; j++) delete S.stages[j];
+    S.phase = 'stages'; S.current = n; S.introStep = 1;
+    S.final = blank().final;
+    S.stages[n] = { status: 'open', openAt: now() };
+  }
+  function testAct(kind) {
+    const n = testNow();
+    let msg;
+    if (kind === 'prev') {
+      if (n === 1) {
+        S.stages = {}; S.phase = 'intro'; S.introStep = 0; S.current = 0; S.final = blank().final;
+        msg = '오프닝부터 다시 봐요';
+      } else {
+        const m = n > N ? N : n - 1;
+        testRestart(m);
+        msg = `${m}단계로 돌아왔어요`;
+      }
+    } else if (kind === 'again') {
+      const m = Math.min(n, N);
+      testRestart(m);
+      msg = `${m}단계를 처음부터 다시 해요`;
+    } else {
+      if (n > N) return;
+      if (n === 0) {
+        demoUser();
+        S.stages = {}; testRestart(1);
+        msg = '1단계로 넘어왔어요';
+      } else {
+        const F = CO.demoFill;
+        for (let j = n + 1; j <= N; j++) delete S.stages[j];
+        fillStage(n, F, F.t[n - 1], now() - F.t[n - 1] * 1000 - 120000);
+        S.introStep = 1;
+        if (n === N) {
+          S.phase = 'final'; S.current = N;
+          S.final = blank().final; S.final.finishedAt = now();
+          msg = '최종 결과로 넘어왔어요';
+        } else {
+          S.phase = 'stages'; S.current = n + 1;
+          S.stages[n + 1] = { status: 'open', openAt: now() };
+          msg = `${n + 1}단계로 넘어왔어요`;
+        }
+      }
+    }
+    save();
+    history.replaceState(null, '', '#' + canonical()); route();
+    band(msg, true);
+  }
+  function sheetTest() {
+    closeSheets();
+    const n = testNow();
+    const where = n === 0 ? '시작 전' : n > N ? '완주' : `${n}단계 ${esc(stageOf(n).place)}`;
+    const off = { prev: n === 0, again: n === 0, next: n > N };
+    const item = (k, label, desc) => `<div class="tm-item"><button class="btn ghost${off[k] ? ' off' : ''}" type="button" data-t="${k}"${off[k] ? ' disabled aria-disabled="true"' : ''}>${label}</button><p class="tm-desc">${desc}</p></div>`;
+    const w = sheet('테스트 메뉴', `<p class="tm-now">지금: ${where}</p>
+      <div class="tm-item"><button class="btn ghost" type="button" data-t="reset">새로 하기</button><p class="tm-desc">기록을 지우고 처음 화면으로</p></div>
+      ${item('prev', '이전 단계로', '앞 단계를 처음부터 다시')}
+      ${item('again', '이 단계 다시', '지금 단계를 처음부터 다시')}
+      ${item('next', '다음 단계로', '지금 단계를 끝낸 것으로 하고 넘어가기')}
+      <button class="btn-sub tm-more" type="button" id="t-more">시연 도구 더 보기</button>`, { cls: 'tm' });
+    $$('[data-t]', w).forEach((b) => b.addEventListener('click', () => {
+      if (b.disabled) return;
+      w._close();
+      if (b.dataset.t === 'reset') resetAll(); else testAct(b.dataset.t);
+    }));
+    $('#t-more', w).addEventListener('click', sheetDemo);
+  }
+  const testDock = document.createElement('div');
+  testDock.className = 'tdock';
+  testDock.innerHTML = '<button class="tbtn" type="button" aria-label="테스트 메뉴 열기">테스트</button>';
+  document.body.appendChild(testDock);
+  testDock.querySelector('.tbtn').addEventListener('click', (e) => { e.stopPropagation(); sheetTest(); });
+
   function demoForce(mode) {
     demoUser();
     const vs = virtualPeople();
@@ -1343,7 +1434,7 @@
       <section class="demo-sec"><h3>결과 강제</h3><p>6단계까지 채우고 최종 결과부터 봅니다.</p><div class="seg" id="d-force"><button type="button" data-v="first">내가 1위</button><button type="button" data-v="lucky">내가 행운상</button><button type="button" data-v="none">수상 없음</button></div></section>
       <section class="demo-sec"><h3>QR 주소 보기</h3><p>인쇄해서 실제로 찍어 볼 수 있습니다.</p><div class="qr-grid">${[0, 1, 2, 3, 4, 5, 6].map((n) => `<div class="qr-item"><img alt="" src="${qrImg(qrURL(n))}"><b>${n ? `${n}단계 ${esc(stageOf(n).place)}` : '입장 QR'}</b><code>${esc(qrURL(n))}</code></div>`).join('')}</div></section>`);
     const pressGroup = (id, set) => $$(`#${id} button`, w).forEach((b) => b.addEventListener('click', () => { $$(`#${id} button`, w).forEach((x) => x.setAttribute('aria-pressed', String(x === b))); set(b.dataset.v); }));
-    $('#d-reset', w).addEventListener('click', () => { try { localStorage.removeItem(KEY); sessionStorage.clear(); } catch (e) { /* 저장소 없음 */ } S = blank(); w._close(); history.replaceState(null, '', '#/'); route(); band('기록을 모두 지웠어요', true); });
+    $('#d-reset', w).addEventListener('click', () => { w._close(); resetAll(); });
     pressGroup('d-stage', (v) => { jumpStage = Number(v); });
     pressGroup('d-screen', (v) => { jumpScreen = v; });
     $('#d-go', w).addEventListener('click', () => { w._close(); demoJump(jumpStage, jumpScreen); });

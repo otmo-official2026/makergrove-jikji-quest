@@ -718,6 +718,23 @@ h1, h2, h3, p { margin: 0; }
 .seg { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .seg button { min-height: 48px; padding: 0 14px; border: 2.5px solid var(--ink); border-radius: 10px; font-weight: 700; font-size: 16px; background: #FFFBF1; }
 .seg button[aria-pressed='true'] { background: var(--ink); color: var(--gold-hi); }
+/* X-05 테스트 버튼: #app 바깥에 하나만 두고, 폰 틀과 같은 자리에 겹친다 */
+.tdock { position: fixed; z-index: 100; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; min-width: 320px; height: 100vh; height: 100dvh; pointer-events: none; }
+@media (min-width: 600px) { .tdock { top: 50%; width: 400px; height: min(100dvh, 880px); transform: translate(-50%, -50%); } }
+.tbtn { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); min-width: 44px; height: 44px; padding: 0 12px; border-radius: 999px; background: rgba(26, 23, 20, .55); color: var(--paper); border: 2px solid rgba(243, 234, 214, .6); font-weight: 700; font-size: 13px; line-height: 1; pointer-events: auto; }
+.tbtn:active { transform: scale(.94); }
+/* 위쪽 바가 있는 화면: "?" 왼쪽에 두고 진행 칸을 조금 왼쪽으로 민다 */
+body:has(#app > .bar) .tbtn { right: calc(62px + env(safe-area-inset-right)); }
+body:has(.tdock) .bar .dots { margin-right: 56px; }
+/* 덮이는 창이 열리면 감춘다 */
+body:has(#app .sheet-wrap, #app .dialog-wrap, #app .offline-wrap) .tdock { display: none; }
+.tm .tm-now { font-weight: 700; font-size: 16px; color: var(--ink-soft); }
+.tm-item { margin-top: 12px; }
+.tm-desc { margin-top: 6px; font-size: 15px; color: var(--ink-soft); text-align: center; white-space: nowrap; }
+#app.dark .tm .btn.ghost { background: transparent; color: var(--ink); border-color: var(--ink); box-shadow: none; }
+.tm .btn.off { opacity: .38; cursor: default; }
+.tm .btn.off:active { transform: none; }
+.tm .tm-more { font-size: 15px; font-weight: 600; color: var(--ink-soft); margin-top: 14px; }
 .qr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
 .qr-item { border: 2.5px solid var(--ink); border-radius: 12px; padding: 10px; background: #fff; text-align: center; }
 .qr-item img { width: 100%; image-rendering: pixelated; display: block; }
